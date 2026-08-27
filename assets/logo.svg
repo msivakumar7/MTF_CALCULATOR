@@ -1,0 +1,5 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="white"/>
+  <path d="M12 48V16H20L28 32L36 16H44V48H36V28L28 44L20 28V48H12Z" fill="#FF5A6F"/>
+  <text x="50%" y="55%" text-anchor="middle" fill="#172033" font-family="Inter, sans-serif" font-size="20" font-weight="600">MTF</text>
+</svg>
