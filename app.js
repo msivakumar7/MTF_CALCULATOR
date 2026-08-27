@@ -7,7 +7,31 @@ document.addEventListener('DOMContentLoaded', () => {
   let historyData = JSON.parse(localStorage.getItem('mtf_history') || '[]');
   let customStocks = JSON.parse(localStorage.getItem('mtf_custom_stocks') || '[]');
   let plChartInstance = null;
-  let currentCalcData = null; // Store result for Detailed Analysis page
+  let currentCalcData = null;
+  let historySelectionMode = false;
+  let selectedHistoryIds = new Set();
+
+  // --- Theme Management ---
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('mtf_theme', theme);
+    if (themeIcon) themeIcon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+    // Update meta theme-color for mobile
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#0F1219' : '#FFFFFF');
+  }
+  // Load saved theme or default to system preference
+  const savedTheme = localStorage.getItem('mtf_theme');
+  if (savedTheme) { applyTheme(savedTheme); }
+  else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { applyTheme('dark'); }
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+  }
 
   // Merge custom stocks into MTF_STOCKS
   if (typeof MTF_STOCKS !== 'undefined') {
@@ -50,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     calcBtn: document.getElementById('calcBtn'),
     
     // Short Results
+    emptyState: document.getElementById('emptyState'),
     shortResultsArea: document.getElementById('shortResultsArea'),
     zLevShort: document.getElementById('zLevShort'),
     zPosShort: document.getElementById('zPosShort'),
@@ -96,7 +121,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // History
     historyGrid: document.getElementById('historyGrid'),
-    clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+    historyNormalHeader: document.getElementById('historyNormalHeader'),
+    historySelectHeader: document.getElementById('historySelectHeader'),
+    historySelectBtn: document.getElementById('historySelectBtn'),
+    historySettingsMenuBtn: document.getElementById('historySettingsMenuBtn'),
+    historySelectAllBtn: document.getElementById('historySelectAllBtn'),
+    historyCancelSelectBtn: document.getElementById('historyCancelSelectBtn'),
+    historySelectedCountText: document.getElementById('historySelectedCountText'),
+    historyActionBar: document.getElementById('historyActionBar'),
+    historyActionText: document.getElementById('historyActionText'),
+    historyDeleteSelectedBtn: document.getElementById('historyDeleteSelectedBtn'),
     
     // Modals
     resetModal: document.getElementById('resetModal'),
@@ -105,7 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
     stockForm: document.getElementById('stockForm'),
     settingsModal: document.getElementById('settingsModal'),
     settingsBtn: document.getElementById('settingsBtn'),
-    mobileSettingsBtn: document.getElementById('mobileSettingsBtn')
+    mobileSettingsBtn: document.getElementById('mobileSettingsBtn'),
+    clearHistoryModal: document.getElementById('clearHistoryModal'),
+    confirmClearHistoryBtn: document.getElementById('confirmClearHistoryBtn'),
+    historyContextMenu: document.getElementById('historyContextMenu'),
+    menuClearAllHistory: document.getElementById('menuClearAllHistory')
   };
 
   // --- Utility Functions ---
@@ -135,7 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if(pageId) {
         showPage(pageId);
         if (pageId === 'stocks') renderStocksPage();
-        if (pageId === 'history') renderHistory();
+        if (pageId === 'history') {
+          historySelectionMode = false;
+          selectedHistoryIds.clear();
+          renderHistory();
+        }
       }
     });
   });
@@ -187,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.buyDate.value = '';
     els.sellDate.value = '';
     els.shortResultsArea.classList.add('hidden');
+    if(els.emptyState) els.emptyState.classList.remove('hidden');
     currentCalcData = null;
     checkCalcEnable();
   });
@@ -243,6 +286,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.search-wrap')) els.searchDropdown.classList.add('hidden');
+    
+    // History context menu outside click
+    if(els.historyContextMenu && !els.historyContextMenu.classList.contains('hidden')) {
+      if(!e.target.closest('#historyContextMenu') && !e.target.closest('#historySettingsMenuBtn') && !e.target.closest('.history-more-btn')) {
+        els.historyContextMenu.classList.add('hidden');
+      }
+    }
   });
 
   function selectStock(stock) {
@@ -328,53 +378,60 @@ document.addEventListener('DOMContentLoaded', () => {
   function performCalculation() {
     if (!currentStock) return;
     
-    const bp = parseFloat(els.buyPrice.value);
-    const sp = parseFloat(els.sellPrice.value) || 0;
-    const cap = parseFloat(els.ownCapital.value);
-    const days = parseInt(els.holdingDays.value) || 0;
+    // Simulate slight loading feeling on desktop (immediate on mobile usually but good for UX)
+    els.calcBtn.innerHTML = `<span class="material-symbols-outlined" style="animation:spin 1s linear infinite">sync</span> Calculating...`;
     
-    const zOverrides = { interestRate: overrides.ovZInterest || 0, brokerage: overrides.ovZBrokerage || 0 };
-    const gOverrides = { interestRate: overrides.ovGInterest || 0, brokerage: overrides.ovGBrokerage || 0 };
-    
-    // ZERODHA MATH
-    let zRes = null;
-    if (currentStock.zMargin) {
-      const lev = getLev(currentStock.zMargin);
-      const maxPos = cap * lev;
-      const qty = Math.floor(maxPos / bp);
-      if (qty > 0) {
-        zRes = calcCharges(BROKER_CONFIG.zerodha, bp, sp, qty, days, currentStock.zMargin, zOverrides);
-        zRes.qty = qty;
-        zRes.maxPos = maxPos;
-        zRes.lev = lev;
-        zRes.actualPos = qty * bp;
-        zRes.reqMargin = zRes.actualPos * (currentStock.zMargin / 100);
-        zRes.brokerFunding = zRes.actualPos - zRes.reqMargin; // Overwrite calcCharges default which assumes full qty requirement
+    setTimeout(() => {
+      els.calcBtn.innerHTML = `Calculate MTF`;
+      const bp = parseFloat(els.buyPrice.value);
+      const sp = parseFloat(els.sellPrice.value) || 0;
+      const cap = parseFloat(els.ownCapital.value);
+      const days = parseInt(els.holdingDays.value) || 0;
+      
+      const zOverrides = { interestRate: overrides.ovZInterest || 0, brokerage: overrides.ovZBrokerage || 0 };
+      const gOverrides = { interestRate: overrides.ovGInterest || 0, brokerage: overrides.ovGBrokerage || 0 };
+      
+      // ZERODHA MATH
+      let zRes = null;
+      if (currentStock.zMargin) {
+        const lev = getLev(currentStock.zMargin);
+        const maxPos = cap * lev;
+        const qty = Math.floor(maxPos / bp);
+        if (qty > 0) {
+          zRes = calcCharges(BROKER_CONFIG.zerodha, bp, sp, qty, days, currentStock.zMargin, zOverrides);
+          zRes.qty = qty;
+          zRes.maxPos = maxPos;
+          zRes.lev = lev;
+          zRes.actualPos = qty * bp;
+          zRes.reqMargin = zRes.actualPos * (currentStock.zMargin / 100);
+          zRes.brokerFunding = zRes.actualPos - zRes.reqMargin; // Overwrite calcCharges default which assumes full qty requirement
+        }
       }
-    }
-    
-    // GROWW MATH
-    let gRes = null;
-    if (currentStock.gMargin) {
-      const lev = getLev(currentStock.gMargin);
-      const maxPos = cap * lev;
-      const qty = Math.floor(maxPos / bp);
-      if (qty > 0) {
-        gRes = calcCharges(BROKER_CONFIG.groww, bp, sp, qty, days, currentStock.gMargin, gOverrides);
-        gRes.qty = qty;
-        gRes.maxPos = maxPos;
-        gRes.lev = lev;
-        gRes.actualPos = qty * bp;
-        gRes.reqMargin = gRes.actualPos * (currentStock.gMargin / 100);
-        gRes.brokerFunding = gRes.actualPos - gRes.reqMargin;
+      
+      // GROWW MATH
+      let gRes = null;
+      if (currentStock.gMargin) {
+        const lev = getLev(currentStock.gMargin);
+        const maxPos = cap * lev;
+        const qty = Math.floor(maxPos / bp);
+        if (qty > 0) {
+          gRes = calcCharges(BROKER_CONFIG.groww, bp, sp, qty, days, currentStock.gMargin, gOverrides);
+          gRes.qty = qty;
+          gRes.maxPos = maxPos;
+          gRes.lev = lev;
+          gRes.actualPos = qty * bp;
+          gRes.reqMargin = gRes.actualPos * (currentStock.gMargin / 100);
+          gRes.brokerFunding = gRes.actualPos - gRes.reqMargin;
+        }
       }
-    }
-    
-    currentCalcData = { bp, sp, cap, days, zRes, gRes, stock: currentStock };
-    renderShortResults(currentCalcData);
+      
+      currentCalcData = { bp, sp, cap, days, zRes, gRes, stock: currentStock };
+      renderShortResults(currentCalcData);
+    }, 150);
   }
 
   function renderShortResults(data) {
+    if(els.emptyState) els.emptyState.classList.add('hidden');
     els.shortResultsArea.classList.remove('hidden');
     
     // Render ZERODHA
@@ -419,7 +476,9 @@ document.addEventListener('DOMContentLoaded', () => {
       els.shortWinnerArea.classList.add('hidden');
     }
     
-    els.shortResultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (window.innerWidth < 768) {
+      els.shortResultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   // --- Detailed Analysis Page ---
@@ -510,9 +569,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('saveCalcBtn').onclick = () => {
       historyData.unshift({
         id: Date.now(), date: new Date().toISOString(), stock: data.stock,
-        bp: data.bp, sp: data.sp, cap: data.cap, days: data.days
+        bp: data.bp, sp: data.sp, cap: data.cap, days: data.days,
+        zRes: data.zRes, gRes: data.gRes
       });
-      if(historyData.length > 20) historyData.pop();
       localStorage.setItem('mtf_history', JSON.stringify(historyData));
       alert('Saved to History');
     };
@@ -670,32 +729,161 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- History Page ---
   function renderHistory() {
+    // Sync UI mode
+    if (historySelectionMode) {
+      els.historyNormalHeader.classList.add('hidden');
+      els.historySelectHeader.classList.remove('hidden');
+      els.historyActionBar.classList.remove('hidden');
+      updateHistorySelectionText();
+    } else {
+      els.historyNormalHeader.classList.remove('hidden');
+      els.historySelectHeader.classList.add('hidden');
+      els.historyActionBar.classList.add('hidden');
+    }
+
     if (historyData.length === 0) {
       els.historyGrid.innerHTML = `
-        <div class="history-empty" style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text2)">
-          <span class="material-symbols-outlined" style="font-size:48px;margin-bottom:16px;opacity:0.5">history</span>
+        <div class="history-empty">
+          <span class="material-symbols-outlined">history</span>
           <h3>No saved calculations yet.</h3>
-          <p>Calculate a trade and save it to view it here.</p>
+          <p>Your saved MTF calculations will appear here.</p>
+          <button class="btn-outline mt-lg" onclick="document.querySelector('.nav-link[data-page=\\'calculator\\']').click()">Go to Calculator</button>
         </div>
       `;
+      // Ensure select features hide if empty
+      els.historySelectBtn.disabled = true;
+      if (historySelectionMode) toggleHistorySelectionMode();
       return;
     }
     
-    els.historyGrid.innerHTML = historyData.map(h => `
-      <div class="card history-card" style="padding:16px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:12px">
-          <strong>${h.stock.symbol}</strong>
-          <span style="font-size:12px;color:var(--text2)">${new Date(h.date).toLocaleDateString()}</span>
+    els.historySelectBtn.disabled = false;
+    
+    els.historyGrid.innerHTML = historyData.map(h => {
+      const zPL = h.zRes ? formatINR(h.zRes.netPL) : 'N/A';
+      const gPL = h.gRes ? formatINR(h.gRes.netPL) : 'N/A';
+      const maxQty = h.zRes ? h.zRes.qty : (h.gRes ? h.gRes.qty : 0);
+      const isSelected = selectedHistoryIds.has(h.id);
+      
+      return `
+        <div class="card history-card" style="padding:16px; cursor:${historySelectionMode ? 'pointer' : 'default'}; border-color:${isSelected ? 'var(--accent)' : 'var(--border)'}" onclick="${historySelectionMode ? `toggleHistoryItemSelection(${h.id})` : ''}">
+          <div class="hc-top">
+            <div class="hc-symbol-wrap">
+              ${historySelectionMode ? `<input type="checkbox" class="hc-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleHistoryItemSelection(${h.id})">` : ''}
+              <div class="hc-symbol">${h.stock.symbol}</div>
+            </div>
+            ${!historySelectionMode ? `
+              <div class="hc-actions">
+                <button class="icon-btn history-more-btn" onclick="event.stopPropagation(); openHistoryMenu(event, ${h.id})"><span class="material-symbols-outlined">more_vert</span></button>
+              </div>
+            ` : ''}
+          </div>
+          <div style="font-size:14px;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+            <span style="font-weight:600">${formatINR(h.bp)} <span style="color:var(--text2);font-weight:400">→</span> ${h.sp>0?formatINR(h.sp):'–'}</span>
+          </div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px">
+            Capital: ${formatINR(h.cap)} &nbsp;&bull;&nbsp; Max Qty: ${maxQty} &nbsp;&bull;&nbsp; ${h.days} days
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;background:var(--bg2);padding:10px;border-radius:var(--radius-sm)">
+            <div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:2px">Zerodha</div>
+              <div style="font-size:14px;font-weight:600;color:${h.zRes&&h.zRes.netPL>=0?'var(--success)':'var(--danger)'}">${zPL}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:2px">Groww</div>
+              <div style="font-size:14px;font-weight:600;color:${h.gRes&&h.gRes.netPL>=0?'var(--success)':'var(--danger)'}">${gPL}</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:12px;text-align:right">
+            ${new Date(h.date).toLocaleDateString()}
+          </div>
+          ${!historySelectionMode ? `
+            <button class="btn-outline btn-sm w-full mt-lg" onclick="loadHistory(${h.id})">Load in Calculator</button>
+          ` : ''}
         </div>
-        <div style="font-size:14px;color:var(--text2);margin-bottom:12px">
-          Capital: ${formatINR(h.cap)} <br/> Buy: ${formatINR(h.bp)} | Sell: ${formatINR(h.sp)}
-        </div>
-        <button class="btn-outline btn-sm w-full" onclick="loadHistory(${h.id})">Load in Calculator</button>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
+  // Multi-Select Logic
+  function toggleHistorySelectionMode() {
+    historySelectionMode = !historySelectionMode;
+    if (!historySelectionMode) selectedHistoryIds.clear();
+    renderHistory();
+  }
+
+  window.toggleHistoryItemSelection = function(id) {
+    if (!historySelectionMode) return;
+    if (selectedHistoryIds.has(id)) selectedHistoryIds.delete(id);
+    else selectedHistoryIds.add(id);
+    renderHistory();
+  }
+
+  function updateHistorySelectionText() {
+    const cnt = selectedHistoryIds.size;
+    els.historySelectedCountText.textContent = `${cnt} selected`;
+    els.historyActionText.textContent = `${cnt} selected`;
+    if (cnt > 0) {
+      els.historyDeleteSelectedBtn.disabled = false;
+      els.historyDeleteSelectedBtn.textContent = `Delete Selected (${cnt})`;
+    } else {
+      els.historyDeleteSelectedBtn.disabled = true;
+      els.historyDeleteSelectedBtn.textContent = `Delete Selected`;
+    }
+  }
+
+  els.historySelectBtn.addEventListener('click', toggleHistorySelectionMode);
+  els.historyCancelSelectBtn.addEventListener('click', toggleHistorySelectionMode);
+  els.historySelectAllBtn.addEventListener('click', () => {
+    if (selectedHistoryIds.size === historyData.length) {
+      selectedHistoryIds.clear(); // Deselect all if all are selected
+    } else {
+      historyData.forEach(h => selectedHistoryIds.add(h.id));
+    }
+    renderHistory();
+  });
+
+  els.historyDeleteSelectedBtn.addEventListener('click', () => {
+    const cnt = selectedHistoryIds.size;
+    if (cnt === 0) return;
+    if (confirm(`Delete ${cnt} calculations?\nThese calculations will be permanently removed.`)) {
+      historyData = historyData.filter(h => !selectedHistoryIds.has(h.id));
+      localStorage.setItem('mtf_history', JSON.stringify(historyData));
+      historySelectionMode = false;
+      selectedHistoryIds.clear();
+      renderHistory();
+    }
+  });
+
+  // Single Item Menu Logic
+  let activeHistoryId = null;
+  
+  window.openHistoryMenu = function(e, id) {
+    activeHistoryId = id;
+    
+    // Clear menu and re-add single item context
+    els.historyContextMenu.innerHTML = `
+      <div class="menu-item" onclick="loadHistory(${id})">Load in Calculator</div>
+      <div class="menu-item text-danger" onclick="deleteSingleHistory(${id})">Delete</div>
+    `;
+    
+    // Position menu
+    const rect = e.currentTarget.getBoundingClientRect();
+    els.historyContextMenu.style.top = `${rect.bottom + window.scrollY + 4}px`;
+    els.historyContextMenu.style.left = `${rect.left + window.scrollX - 120}px`;
+    els.historyContextMenu.classList.remove('hidden');
+  };
+
+  window.deleteSingleHistory = function(id) {
+    els.historyContextMenu.classList.add('hidden');
+    if(confirm('Delete this calculation?\nThis saved calculation will be permanently removed.')) {
+      historyData = historyData.filter(h => h.id !== id);
+      localStorage.setItem('mtf_history', JSON.stringify(historyData));
+      renderHistory();
+    }
+  };
+
   window.loadHistory = function(id) {
+    els.historyContextMenu.classList.add('hidden');
     const h = historyData.find(x => x.id === id);
     if(!h) return;
     selectStock(h.stock);
@@ -707,11 +895,26 @@ document.addEventListener('DOMContentLoaded', () => {
     els.calcBtn.click();
   };
 
-  els.clearHistoryBtn.addEventListener('click', () => {
-    if(confirm('Clear all history?')) {
-      historyData = [];
-      localStorage.removeItem('mtf_history');
-      renderHistory();
-    }
+  // Header settings menu -> Clear all
+  els.historySettingsMenuBtn.addEventListener('click', (e) => {
+    els.historyContextMenu.innerHTML = `
+      <div class="menu-item text-danger" id="menuClearAllHistory">Clear All History</div>
+    `;
+    const rect = e.currentTarget.getBoundingClientRect();
+    els.historyContextMenu.style.top = `${rect.bottom + window.scrollY + 4}px`;
+    els.historyContextMenu.style.left = `${rect.left + window.scrollX - 120}px`;
+    els.historyContextMenu.classList.remove('hidden');
+    
+    document.getElementById('menuClearAllHistory').addEventListener('click', () => {
+      els.historyContextMenu.classList.add('hidden');
+      els.clearHistoryModal.classList.remove('hidden');
+    });
+  });
+
+  els.confirmClearHistoryBtn.addEventListener('click', () => {
+    historyData = [];
+    localStorage.removeItem('mtf_history');
+    els.clearHistoryModal.classList.add('hidden');
+    renderHistory();
   });
 });
