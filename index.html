@@ -29,6 +29,9 @@
       <a href="#" class="nav-link" data-page="history">History</a>
     </nav>
     <div class="header-right">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light/dark mode">
+        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+      </button>
       <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
         <span class="material-symbols-outlined">settings</span>
       </button>
@@ -51,8 +54,8 @@
     </div>
   </div>
 
-  <div class="calc-layout-centered">
-    <div class="card" style="max-width: 600px; margin: 0 auto; width: 100%;">
+  <div class="calc-split-layout">
+    <div class="calc-left-col card">
       <!-- Stock Search -->
       <div class="field-group">
         <label class="field-label">Search Stock</label>
@@ -148,9 +151,21 @@
       <button class="btn-primary" id="calcBtn" disabled>
         Calculate MTF
       </button>
+    </div>
+
+    <!-- RIGHT: Results / Empty State -->
+    <div class="calc-right-col">
+      <!-- Empty State -->
+      <div class="card empty-state" id="emptyState">
+        <div class="empty-icon-wrap">
+          <span class="material-symbols-outlined empty-icon">calculate</span>
+        </div>
+        <h3 class="empty-title">READY TO CALCULATE</h3>
+        <p class="empty-desc">Enter your trade details and calculate to see your maximum quantity, broker funding and estimated net P/L.</p>
+      </div>
 
       <!-- RESULTS SUMMARY (Short Page) -->
-      <div class="hidden mt-lg" id="shortResultsArea">
+      <div class="hidden" id="shortResultsArea">
         <!-- Buying Power & Max Quantity -->
         <div class="short-result-section">
           <h3 class="short-result-title">YOUR BUYING POWER</h3>
@@ -212,6 +227,7 @@
             <span id="dataStatusText">MTF data verified</span>
           </div>
           <button class="btn-outline btn-sm" id="refreshBtn"><span class="material-symbols-outlined tiny">refresh</span> Refresh</button>
+        </div>
         </div>
       </div>
     </div>
@@ -359,15 +375,36 @@
 
 <!-- =============== HISTORY PAGE =============== -->
 <section class="page" id="page-history">
-  <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+  <div class="page-header" id="historyNormalHeader" style="display:flex; justify-content:space-between; align-items:center;">
     <div>
       <h1 class="page-title">Saved Calculations</h1>
       <p class="page-subtitle">Review your previously saved margin trade scenarios.</p>
     </div>
-    <button class="btn-outline btn-sm text-danger" id="clearHistoryBtn" style="border-color:var(--danger)">Clear History</button>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-outline btn-sm" id="historySelectBtn">Select</button>
+      <button class="icon-btn" id="historySettingsMenuBtn"><span class="material-symbols-outlined">more_vert</span></button>
+    </div>
   </div>
+  
+  <div class="page-header hidden" id="historySelectHeader" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h1 class="page-title">Select Calculations</h1>
+      <p class="page-subtitle" id="historySelectedCountText">0 selected</p>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-outline btn-sm" id="historySelectAllBtn">Select All</button>
+      <button class="btn-outline btn-sm" id="historyCancelSelectBtn">Cancel</button>
+    </div>
+  </div>
+
   <div class="history-grid" id="historyGrid">
     <!-- Populated by JS -->
+  </div>
+  
+  <!-- History Action Bar (Sticky Bottom) -->
+  <div class="history-action-bar hidden" id="historyActionBar">
+    <span id="historyActionText" style="font-weight:600">0 selected</span>
+    <button class="btn-primary btn-sm" style="background:var(--danger); border:none; margin:0; width:auto;" id="historyDeleteSelectedBtn" disabled>Delete Selected</button>
   </div>
 </section>
 
@@ -390,6 +427,25 @@
 <!-- Stock Detail Modal -->
 <div class="modal-overlay hidden" id="stockDetailModal">
   <div class="modal-content" id="stockDetailContent"></div>
+</div>
+
+<!-- Clear History Modal -->
+<div class="modal-overlay hidden" id="clearHistoryModal">
+  <div class="modal-content" style="max-width:400px">
+    <div class="modal-body text-center" style="padding: 32px 24px">
+      <h3 style="font-size:18px;font-weight:600;margin-bottom:8px">Clear all history?</h3>
+      <p style="color:var(--text2);margin-bottom:24px;font-size:14px">This will permanently delete all saved calculations.</p>
+      <div style="display:flex; gap:12px; justify-content:center">
+        <button class="btn-outline modal-close" data-close="clearHistoryModal">Cancel</button>
+        <button class="btn-primary" style="margin:0; width:auto; padding:0 24px; background:var(--danger)" id="confirmClearHistoryBtn">Clear All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- History Action Menu (Hidden Popup) -->
+<div class="context-menu hidden" id="historyContextMenu">
+  <div class="menu-item text-danger" id="menuClearAllHistory">Clear All History</div>
 </div>
 
 <!-- Add/Edit Stock Modal -->
