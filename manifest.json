@@ -2,7 +2,8 @@
   "name": "MTF Calculator",
   "short_name": "MTF Calc",
   "description": "Compare Zerodha vs Groww MTF Costs",
-  "start_url": "./index.html",
+  "id": "/mtf-calc/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#F7F8FA",
   "theme_color": "#FFFFFF",
@@ -11,13 +12,25 @@
       "src": "assets/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
