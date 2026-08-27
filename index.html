@@ -29,11 +29,7 @@
       <a href="#" class="nav-link" data-page="history">History</a>
     </nav>
     <div class="header-right">
-      <button class="data-badge" id="dataStatusBadge" title="Data status">
-        <span class="dot dot-green"></span>
-        <span class="badge-text">Data verified</span>
-      </button>
-      <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
         <span class="material-symbols-outlined">settings</span>
       </button>
     </div>
@@ -45,92 +41,82 @@
 
 <!-- =============== CALCULATOR PAGE =============== -->
 <section class="page page-active" id="page-calculator">
-  <div class="page-header">
-    <h1 class="page-title">MTF Calculator</h1>
-    <p class="page-subtitle">Compare MTF funding, interest, charges and net profit</p>
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+    <div>
+      <h1 class="page-title">MTF Calculator</h1>
+      <p class="page-subtitle">Compare MTF funding, interest and charges before you trade.</p>
+    </div>
+    <div class="calc-actions-top">
+      <button class="btn-outline btn-sm" id="resetBtnTop" title="Clear your current trade inputs"><span class="material-symbols-outlined tiny">restart_alt</span> Reset</button>
+    </div>
   </div>
 
-  <div class="calc-layout">
-    <!-- LEFT: Inputs -->
-    <div class="calc-inputs-col">
-      <div class="card">
-        <!-- Stock Search -->
+  <div class="calc-layout-centered">
+    <div class="card" style="max-width: 600px; margin: 0 auto; width: 100%;">
+      <!-- Stock Search -->
+      <div class="field-group">
+        <label class="field-label">Search Stock</label>
+        <div class="search-wrap">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input type="text" id="stockSearch" class="field-input search-input" placeholder="Search stock name, NSE symbol or ISIN" autocomplete="off"/>
+          <button class="search-clear hidden" id="searchClear" aria-label="Clear">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <ul class="search-dropdown hidden" id="searchDropdown" role="listbox"></ul>
+      </div>
+
+      <!-- Broker Status (shown after stock selection) -->
+      <div class="broker-status hidden" id="brokerStatus">
+        <div class="selected-stock" id="selectedStockInfo"></div>
+        <div class="broker-row">
+          <div class="broker-chip" id="zChip">
+            <div class="broker-chip-head">Zerodha</div>
+            <div class="broker-chip-body">
+              <span class="chip-metric"><strong id="zMarginPct">–</strong> margin</span>
+              <span class="chip-metric"><strong id="zLeverage">–</strong></span>
+            </div>
+          </div>
+          <div class="broker-chip" id="gChip">
+            <div class="broker-chip-head">Groww</div>
+            <div class="broker-chip-body">
+              <span class="chip-metric"><strong id="gMarginPct">–</strong> margin</span>
+              <span class="chip-metric"><strong id="gLeverage">–</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Input Fields -->
+      <div class="inputs-grid">
         <div class="field-group">
-          <label class="field-label">Select Stock</label>
-          <div class="search-wrap">
-            <span class="material-symbols-outlined search-icon">search</span>
-            <input type="text" id="stockSearch" class="field-input search-input" placeholder="Search stock name, NSE symbol or ISIN" autocomplete="off"/>
-            <button class="search-clear hidden" id="searchClear" aria-label="Clear">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-          <ul class="search-dropdown hidden" id="searchDropdown" role="listbox"></ul>
-        </div>
-
-        <!-- Broker Status (shown after stock selection) -->
-        <div class="broker-status hidden" id="brokerStatus">
-          <div class="selected-stock" id="selectedStockInfo"></div>
-          <div class="broker-row">
-            <div class="broker-chip" id="zChip">
-              <div class="broker-chip-head"><span class="broker-initial">Z</span> Zerodha</div>
-              <div class="broker-chip-body">
-                <span class="chip-status"><span class="material-symbols-outlined tiny">check_circle</span> Available</span>
-                <span class="chip-metric">Margin <strong id="zMarginPct">–</strong></span>
-                <span class="chip-metric">Leverage <strong id="zLeverage">–</strong></span>
-              </div>
-            </div>
-            <div class="broker-chip" id="gChip">
-              <div class="broker-chip-head"><span class="broker-initial bg-blue">G</span> Groww</div>
-              <div class="broker-chip-body">
-                <span class="chip-status"><span class="material-symbols-outlined tiny">check_circle</span> Available</span>
-                <span class="chip-metric">Margin <strong id="gMarginPct">–</strong></span>
-                <span class="chip-metric">Leverage <strong id="gLeverage">–</strong></span>
-              </div>
-            </div>
-          </div>
-          <p class="data-ts" id="dataTsText"></p>
-        </div>
-
-        <hr class="divider"/>
-
-        <!-- Calculation Mode Toggle -->
-        <div class="toggle-group">
-          <button class="toggle-btn active" data-mode="quantity" id="modeQty">Quantity Based</button>
-          <button class="toggle-btn" data-mode="capital" id="modeCap">Capital Based</button>
-        </div>
-
-        <!-- Input Fields -->
-        <div class="inputs-grid">
-          <div class="field-group">
-            <label class="field-label" for="buyPrice">Buy Price</label>
-            <div class="input-prefix-wrap">
-              <span class="prefix">₹</span>
-              <input type="number" id="buyPrice" class="field-input" placeholder="Enter buy price" min="0" step="0.05" value="0"/>
-            </div>
-          </div>
-          <div class="field-group" id="sellPriceGroup">
-            <label class="field-label" for="sellPrice">Sell Price</label>
-            <div class="input-prefix-wrap">
-              <span class="prefix">₹</span>
-              <input type="number" id="sellPrice" class="field-input" placeholder="Enter sell price" min="0" step="0.05" value="0"/>
-            </div>
-          </div>
-          <div class="field-group" id="quantityGroup">
-            <label class="field-label" for="quantity">Quantity</label>
-            <input type="number" id="quantity" class="field-input" placeholder="Enter quantity" min="0" step="1" value="0"/>
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="ownCapital">
-              Own Capital
-              <span class="material-symbols-outlined info-icon" title="Amount of your own money you bring to this trade">info</span>
-            </label>
-            <div class="input-prefix-wrap">
-              <span class="prefix">₹</span>
-              <input type="number" id="ownCapital" class="field-input" placeholder="Enter own capital" min="0" step="1" value="0"/>
-            </div>
+          <label class="field-label" for="buyPrice">Buy Price</label>
+          <div class="input-prefix-wrap">
+            <span class="prefix">₹</span>
+            <input type="number" id="buyPrice" class="field-input" placeholder="0" min="0" step="0.05" value="0"/>
           </div>
         </div>
-
+        <div class="field-group" id="sellPriceGroup">
+          <label class="field-label" for="sellPrice">Sell Price</label>
+          <div class="input-prefix-wrap">
+            <span class="prefix">₹</span>
+            <input type="number" id="sellPrice" class="field-input" placeholder="0" min="0" step="0.05" value="0"/>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="ownCapital">
+            Your Capital
+            <span class="material-symbols-outlined info-icon" title="Your capital + available MTF determines how many shares you can buy.">info</span>
+          </label>
+          <div class="input-prefix-wrap">
+            <span class="prefix">₹</span>
+            <input type="number" id="ownCapital" class="field-input" placeholder="0" min="0" step="1" value="0"/>
+          </div>
+          <p class="field-hint">Your capital + available MTF determines how many shares you can buy.</p>
+        </div>
+        
         <!-- Holding Period -->
         <div class="field-group">
           <div class="holding-header">
@@ -142,7 +128,7 @@
             </label>
           </div>
           <div id="holdingDaysWrap">
-            <input type="number" id="holdingDays" class="field-input half-input" placeholder="Enter days" min="0" step="1" value="0"/>
+            <input type="number" id="holdingDays" class="field-input" placeholder="0" min="0" step="1" value="0"/>
           </div>
           <div id="holdingDatesWrap" class="hidden dates-row">
             <div class="field-group">
@@ -156,121 +142,186 @@
             <p class="computed-days hidden" id="computedDays"></p>
           </div>
         </div>
-
-        <!-- CTA -->
-        <button class="btn-primary" id="calcBtn" disabled>
-          <span class="material-symbols-outlined btn-icon">calculate</span>
-          Calculate MTF
-        </button>
-      </div>
-    </div>
-
-    <!-- RIGHT: Results / Empty State -->
-    <div class="calc-results-col" id="resultsCol">
-      <!-- Empty State -->
-      <div class="card empty-state" id="emptyState">
-        <div class="empty-icon-wrap">
-          <span class="material-symbols-outlined empty-icon">calculate</span>
-        </div>
-        <h3 class="empty-title">Ready to calculate</h3>
-        <p class="empty-desc">Enter your trade details to compare Zerodha and Groww MTF costs.</p>
-        <div class="empty-flow">
-          <span class="flow-item"><span class="material-symbols-outlined tiny">show_chart</span> Stock</span>
-          <span class="material-symbols-outlined flow-arrow">arrow_downward</span>
-          <span class="flow-item"><span class="material-symbols-outlined tiny">account_balance_wallet</span> Margin</span>
-          <span class="material-symbols-outlined flow-arrow">arrow_downward</span>
-          <span class="flow-item"><span class="material-symbols-outlined tiny">percent</span> Interest + Charges</span>
-          <span class="material-symbols-outlined flow-arrow">arrow_downward</span>
-          <span class="flow-item highlight"><span class="material-symbols-outlined tiny">payments</span> Net Profit</span>
-        </div>
       </div>
 
-      <!-- Results (hidden until calculation) -->
-      <div class="hidden" id="resultsArea">
-        <!-- Trade Summary -->
-        <div class="card result-trade-summary" id="tradeSummaryCard"></div>
-        <!-- Winner -->
-        <div class="card result-winner hidden" id="winnerCard"></div>
-        <!-- Broker Cards -->
-        <div class="broker-compare" id="brokerCompare"></div>
-        <!-- Funding Explanation -->
-        <div class="card collapsible" id="fundingCard">
-          <button class="collapse-header" data-target="fundingBody">
-            <span>How is funding calculated?</span>
-            <span class="material-symbols-outlined chevron">expand_more</span>
-          </button>
-          <div class="collapse-body hidden" id="fundingBody"></div>
-        </div>
-        <!-- Charges Breakdown -->
-        <div class="card collapsible" id="chargesCard">
-          <button class="collapse-header" data-target="chargesBody">
-            <span>Complete Charges Breakdown</span>
-            <span class="material-symbols-outlined chevron">expand_more</span>
-          </button>
-          <div class="collapse-body hidden" id="chargesBody"></div>
-        </div>
-        <!-- Interest Table -->
-        <div class="card collapsible" id="interestCard">
-          <button class="collapse-header" data-target="interestBody">
-            <span>MTF Interest by Holding Period</span>
-            <span class="material-symbols-outlined chevron">expand_more</span>
-          </button>
-          <div class="collapse-body hidden" id="interestBody"></div>
-        </div>
-        <!-- Day-wise P/L -->
-        <div class="card collapsible" id="dayPLCard">
-          <button class="collapse-header" data-target="dayPLBody">
-            <span>Profit by Holding Period</span>
-            <span class="material-symbols-outlined chevron">expand_more</span>
-          </button>
-          <div class="collapse-body hidden" id="dayPLBody"></div>
-        </div>
-        <!-- Visual P/L Chart -->
-        <div class="card collapsible" id="chartCard">
-          <button class="collapse-header open" data-target="chartBody">
-            <span>Net Profit vs Holding Days</span>
-            <span class="material-symbols-outlined chevron">expand_more</span>
-          </button>
-          <div class="collapse-body" id="chartBody">
-            <canvas id="plChart" width="400" height="200"></canvas>
-          </div>
-        </div>
-        <!-- Break-Even -->
-        <div class="card" id="breakEvenCard"></div>
-        <!-- Target Profit -->
-        <div class="card" id="targetProfitCard">
-          <h3 class="card-title">Target Profit</h3>
-          <div class="field-group">
-            <label class="field-label" for="targetProfit">Target Net Profit</label>
-            <div class="input-prefix-wrap">
-              <span class="prefix">₹</span>
-              <input type="number" id="targetProfit" class="field-input" placeholder="Enter target" min="0" value="0"/>
+      <!-- CTA -->
+      <button class="btn-primary" id="calcBtn" disabled>
+        Calculate MTF
+      </button>
+
+      <!-- RESULTS SUMMARY (Short Page) -->
+      <div class="hidden mt-lg" id="shortResultsArea">
+        <!-- Buying Power & Max Quantity -->
+        <div class="short-result-section">
+          <h3 class="short-result-title">YOUR BUYING POWER</h3>
+          <div class="broker-compare">
+            <!-- Zerodha Buy Power -->
+            <div class="broker-card">
+              <div class="broker-card-name">ZERODHA</div>
+              <div class="broker-metric-large"><span class="val" id="zLevShort">–</span></div>
+              <div class="broker-metric-large"><span class="val" id="zPosShort">–</span></div>
+              <div class="broker-metric-large mt-sm"><span class="val text-accent" id="zQtyShort">–</span> <span class="lbl-inline">shares</span></div>
+              <div class="broker-metric mt-md"><span class="lbl">Broker Funding</span><span class="val" id="zFundShort">–</span></div>
+            </div>
+            <!-- Groww Buy Power -->
+            <div class="broker-card">
+              <div class="broker-card-name">GROWW</div>
+              <div class="broker-metric-large"><span class="val" id="gLevShort">–</span></div>
+              <div class="broker-metric-large"><span class="val" id="gPosShort">–</span></div>
+              <div class="broker-metric-large mt-sm"><span class="val text-info" id="gQtyShort">–</span> <span class="lbl-inline">shares</span></div>
+              <div class="broker-metric mt-md"><span class="lbl">Broker Funding</span><span class="val" id="gFundShort">–</span></div>
             </div>
           </div>
-          <div id="targetResult"></div>
+          <!-- Margin Validation Warning -->
+          <div id="marginValidationWarning" class="hidden mt-sm"></div>
         </div>
-        <!-- Actions -->
-        <div class="result-actions">
-          <button class="btn-outline" id="saveCalcBtn"><span class="material-symbols-outlined tiny">bookmark</span> Save</button>
-          <button class="btn-outline" id="shareCalcBtn"><span class="material-symbols-outlined tiny">share</span> Share</button>
-          <button class="btn-outline" id="newCalcBtn"><span class="material-symbols-outlined tiny">refresh</span> New Calculation</button>
+
+        <!-- Estimated Net Profit -->
+        <div class="short-result-section mt-lg">
+          <h3 class="short-result-title">ESTIMATED NET PROFIT</h3>
+          <div class="broker-compare">
+            <div class="broker-card text-center">
+              <div class="broker-card-name">ZERODHA</div>
+              <div class="val-large" id="zNetShort">–</div>
+            </div>
+            <div class="broker-card text-center">
+              <div class="broker-card-name">GROWW</div>
+              <div class="val-large" id="gNetShort">–</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Best Option -->
+        <div class="short-result-section mt-lg hidden" id="shortWinnerArea">
+          <div class="card result-winner text-center">
+            <div class="lbl">LOWEST ESTIMATED COST</div>
+            <div class="winner-broker" id="shortWinnerBroker">GROWW</div>
+            <div class="winner-advantage" style="justify-content:center">
+              Estimated advantage: <span id="shortWinnerDiff">–</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- View Detailed Analysis Btn -->
+        <button class="btn-outline w-full mt-lg" id="viewDetailedBtn">View Detailed Analysis</button>
+        
+        <!-- Data Status -->
+        <div class="data-status-bar mt-lg">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="material-symbols-outlined tiny text-success" id="dataStatusIcon">check_circle</span>
+            <span id="dataStatusText">MTF data verified</span>
+          </div>
+          <button class="btn-outline btn-sm" id="refreshBtn"><span class="material-symbols-outlined tiny">refresh</span> Refresh</button>
         </div>
       </div>
     </div>
   </div>
-  <p class="disclaimer">Estimated values based on available broker data. Actual contract-note charges may differ. Verify current broker values before placing a trade.</p>
+</section>
+
+<!-- =============== TRADE ANALYSIS PAGE (Detailed) =============== -->
+<section class="page" id="page-analysis">
+  <div class="page-header analysis-header">
+    <button class="btn-outline btn-sm" id="backToCalcBtn"><span class="material-symbols-outlined tiny">arrow_back</span> Back to Calculator</button>
+    <div class="breadcrumb">Calculator / <span class="text-text">Trade Analysis</span></div>
+  </div>
+
+  <div class="page-title mb-lg">Trade Analysis</div>
+  
+  <div class="card result-trade-summary mb-lg" id="analysisTradeSummary">
+    <!-- Populated by JS -->
+  </div>
+
+  <div class="analysis-layout">
+    <!-- BROKER COMPARISON -->
+    <h3 class="section-divider">BROKER COMPARISON</h3>
+    <div class="broker-compare" id="analysisBrokerCompare">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- FUNDING DETAILS -->
+    <h3 class="section-divider mt-lg">FUNDING DETAILS</h3>
+    <div class="card collapsible" id="fundingCard">
+      <button class="collapse-header open" data-target="fundingBody">
+        <span>How is funding calculated?</span>
+        <span class="material-symbols-outlined chevron">expand_more</span>
+      </button>
+      <div class="collapse-body" id="fundingBody"></div>
+    </div>
+
+    <!-- CHARGE BREAKDOWN -->
+    <h3 class="section-divider mt-lg">CHARGE BREAKDOWN</h3>
+    <div class="card collapsible" id="chargesCard">
+      <button class="collapse-header" data-target="chargesBody">
+        <span>Complete Charges Breakdown</span>
+        <span class="material-symbols-outlined chevron">expand_more</span>
+      </button>
+      <div class="collapse-body hidden" id="chargesBody"></div>
+    </div>
+
+    <!-- MTF INTEREST -->
+    <h3 class="section-divider mt-lg">MTF INTEREST</h3>
+    <div class="card collapsible" id="interestCard">
+      <button class="collapse-header" data-target="interestBody">
+        <span>MTF Interest by Holding Period</span>
+        <span class="material-symbols-outlined chevron">expand_more</span>
+      </button>
+      <div class="collapse-body hidden" id="interestBody"></div>
+    </div>
+
+    <!-- PROFIT BY HOLDING PERIOD -->
+    <h3 class="section-divider mt-lg">PROFIT BY HOLDING PERIOD</h3>
+    <div class="card collapsible" id="dayPLCard">
+      <button class="collapse-header" data-target="dayPLBody">
+        <span>Profit Table & Chart</span>
+        <span class="material-symbols-outlined chevron">expand_more</span>
+      </button>
+      <div class="collapse-body hidden" id="dayPLBody">
+        <div id="dayPLTableWrap"></div>
+        <div class="mt-lg"><canvas id="plChart" width="400" height="200"></canvas></div>
+      </div>
+    </div>
+
+    <!-- BREAK-EVEN PRICE -->
+    <h3 class="section-divider mt-lg">BREAK-EVEN PRICE</h3>
+    <div class="card" id="breakEvenCard"></div>
+
+    <!-- TARGET PROFIT -->
+    <h3 class="section-divider mt-lg">TARGET PROFIT</h3>
+    <div class="card" id="targetProfitCard">
+      <div class="field-group">
+        <label class="field-label" for="targetProfit">Target Net Profit</label>
+        <div class="input-prefix-wrap">
+          <span class="prefix">₹</span>
+          <input type="number" id="targetProfit" class="field-input" placeholder="0" min="0" value="0"/>
+        </div>
+      </div>
+      <div id="targetResult"></div>
+    </div>
+
+    <div class="result-actions mt-lg">
+      <button class="btn-outline" id="saveCalcBtn"><span class="material-symbols-outlined tiny">bookmark</span> Save Calculation</button>
+      <button class="btn-outline" id="shareCalcBtn"><span class="material-symbols-outlined tiny">share</span> Share</button>
+    </div>
+  </div>
 </section>
 
 <!-- =============== STOCKS PAGE =============== -->
 <section class="page" id="page-stocks">
-  <div class="page-header">
-    <h1 class="page-title">MTF Stocks</h1>
-    <p class="page-subtitle">Browse stocks available for Margin Trading Facility</p>
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <div>
+      <h1 class="page-title">MTF Stocks</h1>
+      <p class="page-subtitle">Manage stock-wise broker MTF data.</p>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-outline btn-sm" id="importCsvBtn"><span class="material-symbols-outlined tiny">upload</span> Import CSV</button>
+      <button class="btn-outline btn-sm" id="exportCsvBtn"><span class="material-symbols-outlined tiny">download</span> Export CSV</button>
+      <button class="btn-primary btn-sm" id="addStockBtn" style="margin:0; height:auto; padding:8px 16px;"><span class="material-symbols-outlined tiny">add</span> Add Stock</button>
+    </div>
   </div>
   <div class="stocks-toolbar">
     <div class="search-wrap toolbar-search">
       <span class="material-symbols-outlined search-icon">search</span>
-      <input type="text" id="stocksTableSearch" class="field-input search-input" placeholder="Search stocks..."/>
+      <input type="text" id="stocksTableSearch" class="field-input search-input" placeholder="Search stock name, symbol or ISIN"/>
     </div>
     <div class="filter-pills" id="stockFilterPills">
       <button class="pill active" data-filter="all">All</button>
@@ -279,55 +330,133 @@
       <button class="pill" data-filter="both">Both</button>
     </div>
   </div>
-  <div class="card table-card">
+  
+  <!-- Desktop Table -->
+  <div class="card table-card hide-mobile">
     <div class="table-wrap">
       <table class="data-table" id="stocksTable">
         <thead>
           <tr>
-            <th class="sortable" data-sort="company">Company</th>
+            <th class="sortable" data-sort="company">Stock</th>
             <th class="sortable" data-sort="symbol">Symbol</th>
-            <th class="sortable text-right" data-sort="zMargin">Zerodha Margin</th>
-            <th class="sortable text-right" data-sort="gMargin">Groww Margin</th>
-            <th class="text-right">Best Leverage</th>
+            <th class="sortable text-right" data-sort="zMargin">Z. Margin</th>
+            <th class="sortable text-right" data-sort="gMargin">G. Margin</th>
+            <th class="text-right">Status</th>
             <th>Updated</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="stocksTableBody"></tbody>
       </table>
     </div>
   </div>
-  <!-- Stock Detail Modal -->
-  <div class="modal-overlay hidden" id="stockDetailModal">
-    <div class="modal-content" id="stockDetailContent"></div>
+
+  <!-- Mobile Cards -->
+  <div class="mobile-stock-cards hide-desktop" id="mobileStockCards">
+    <!-- Populated by JS -->
   </div>
 </section>
 
 <!-- =============== HISTORY PAGE =============== -->
 <section class="page" id="page-history">
-  <div class="page-header">
-    <h1 class="page-title">Saved Calculations</h1>
-    <p class="page-subtitle">Review your previously saved margin trade scenarios.</p>
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h1 class="page-title">Saved Calculations</h1>
+      <p class="page-subtitle">Review your previously saved margin trade scenarios.</p>
+    </div>
+    <button class="btn-outline btn-sm text-danger" id="clearHistoryBtn" style="border-color:var(--danger)">Clear History</button>
   </div>
   <div class="history-grid" id="historyGrid">
     <!-- Populated by JS -->
   </div>
 </section>
 
-<!-- =============== SETTINGS MODAL =============== -->
+<!-- =============== MODALS =============== -->
+
+<!-- Reset Confirmation Modal -->
+<div class="modal-overlay hidden" id="resetModal">
+  <div class="modal-content" style="max-width:400px">
+    <div class="modal-body text-center" style="padding: 32px 24px">
+      <h3 style="font-size:18px;font-weight:600;margin-bottom:8px">Reset calculation?</h3>
+      <p style="color:var(--text2);margin-bottom:24px;font-size:14px">This will clear your current trade inputs.</p>
+      <div style="display:flex; gap:12px; justify-content:center">
+        <button class="btn-outline modal-close" data-close="resetModal">Cancel</button>
+        <button class="btn-primary" style="margin:0; width:auto; padding:0 24px; background:var(--danger)" id="confirmResetBtn">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Detail Modal -->
+<div class="modal-overlay hidden" id="stockDetailModal">
+  <div class="modal-content" id="stockDetailContent"></div>
+</div>
+
+<!-- Add/Edit Stock Modal -->
+<div class="modal-overlay hidden" id="addStockModal">
+  <div class="modal-content" style="max-width: 500px">
+    <div class="modal-header">
+      <h2 id="addStockTitle">Add MTF Stock</h2>
+      <button class="icon-btn modal-close" data-close="addStockModal"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal-body">
+      <form id="stockForm">
+        <div class="inputs-grid" style="grid-template-columns:1fr">
+          <div class="field-group"><label class="field-label">Stock Name</label><input type="text" id="addSName" class="field-input" required placeholder="e.g. South Indian Bank"/></div>
+          <div class="inputs-grid">
+            <div class="field-group"><label class="field-label">NSE Symbol</label><input type="text" id="addSSymbol" class="field-input" required placeholder="SOUTHBANK"/></div>
+            <div class="field-group"><label class="field-label">ISIN (Optional)</label><input type="text" id="addSIsin" class="field-input"/></div>
+          </div>
+        </div>
+        
+        <h3 class="section-divider mt-lg">ZERODHA</h3>
+        <div class="field-group mt-sm">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="addZAvail" checked style="width:18px;height:18px"/> MTF Available
+          </label>
+        </div>
+        <div class="inputs-grid" id="zFields">
+          <div class="field-group"><label class="field-label">Required Margin %</label><input type="number" id="addZMargin" class="field-input" min="0" step="0.01" value="0"/></div>
+          <div class="field-group"><label class="field-label">Leverage (×)</label><input type="number" id="addZLev" class="field-input" min="0" step="0.01" value="0"/></div>
+        </div>
+        
+        <h3 class="section-divider mt-lg">GROWW</h3>
+        <div class="field-group mt-sm">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="addGAvail" checked style="width:18px;height:18px"/> MTF Available
+          </label>
+        </div>
+        <div class="inputs-grid" id="gFields">
+          <div class="field-group"><label class="field-label">Required Margin %</label><input type="number" id="addGMargin" class="field-input" min="0" step="0.01" value="0"/></div>
+          <div class="field-group"><label class="field-label">Leverage (×)</label><input type="number" id="addGLev" class="field-input" min="0" step="0.01" value="0"/></div>
+        </div>
+        
+        <div id="addStockError" class="text-danger mt-sm hidden" style="font-size:13px; font-weight:500;"></div>
+        
+        <div class="mt-lg" style="display:flex; gap:12px; justify-content:flex-end">
+          <button type="button" class="btn-outline modal-close" data-close="addStockModal">Cancel</button>
+          <button type="submit" class="btn-primary" style="margin:0; width:auto; padding:0 24px;">Save Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
 <div class="modal-overlay hidden" id="settingsModal">
   <div class="modal-content settings-modal">
     <div class="modal-header">
-      <h2>Settings</h2>
+      <h2>Advanced Analysis Settings</h2>
       <button class="icon-btn modal-close" data-close="settingsModal"><span class="material-symbols-outlined">close</span></button>
     </div>
     <div class="modal-body">
-      <h3 class="settings-section-title">Advanced Overrides</h3>
-      <p class="settings-desc">Override broker defaults for custom scenarios. Set to 0 to use actual values.</p>
+      <h3 class="settings-section-title">Manual Broker Overrides</h3>
+      <p class="settings-desc">Override broker defaults for custom scenarios. Set to 0 to use official values.</p>
       <div class="inputs-grid">
-        <div class="field-group"><label class="field-label">Zerodha Interest Rate Override (%)</label><input type="number" id="ovZInterest" class="field-input" value="0" min="0" step="0.1"/></div>
-        <div class="field-group"><label class="field-label">Groww Interest Rate Override (%)</label><input type="number" id="ovGInterest" class="field-input" value="0" min="0" step="0.1"/></div>
-        <div class="field-group"><label class="field-label">Zerodha Brokerage Override (₹)</label><input type="number" id="ovZBrokerage" class="field-input" value="0" min="0"/></div>
-        <div class="field-group"><label class="field-label">Groww Brokerage Override (₹)</label><input type="number" id="ovGBrokerage" class="field-input" value="0" min="0"/></div>
+        <div class="field-group"><label class="field-label">Zerodha Interest Rate (%)</label><input type="number" id="ovZInterest" class="field-input" value="0" min="0" step="0.1"/></div>
+        <div class="field-group"><label class="field-label">Groww Interest Rate (%)</label><input type="number" id="ovGInterest" class="field-input" value="0" min="0" step="0.1"/></div>
+        <div class="field-group"><label class="field-label">Zerodha Brokerage (₹)</label><input type="number" id="ovZBrokerage" class="field-input" value="0" min="0"/></div>
+        <div class="field-group"><label class="field-label">Groww Brokerage (₹)</label><input type="number" id="ovGBrokerage" class="field-input" value="0" min="0"/></div>
       </div>
       <button class="btn-primary mt-lg" id="saveSettingsBtn">Save Settings</button>
     </div>
@@ -350,6 +479,10 @@
     <span class="material-symbols-outlined">history</span>
     <span class="bnav-label">History</span>
   </a>
+  <a href="#" class="bnav-item" id="mobileSettingsBtn">
+    <span class="material-symbols-outlined">settings</span>
+    <span class="bnav-label">Settings</span>
+  </a>
 </nav>
 
 <footer class="app-footer">
@@ -362,7 +495,7 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
     });
   }
 </script>
