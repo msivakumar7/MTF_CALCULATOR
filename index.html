@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MTF Calculator – Compare Zerodha vs Groww MTF Costs</title>
+<meta name="description" content="Compare Zerodha vs Groww MTF funding, interest, charges and net profit for Indian stock trades."/>
+<link rel="icon" href="assets/logo.png" type="image/png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="style.css"/>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="apple-touch-icon" href="assets/logo.png">
+</head>
+<body>
+
+<!-- ===== TOP HEADER ===== -->
+<header class="app-header" id="appHeader">
+  <div class="header-inner">
+    <div class="header-left">
+      <img src="assets/logo.png" alt="MTF Calculator" class="header-logo"/>
+      <span class="header-brand">MTF Calculator</span>
+    </div>
+    <nav class="header-nav" id="desktopNav">
+      <a href="#" class="nav-link active" data-page="calculator">Calculator</a>
+      <a href="#" class="nav-link" data-page="stocks">MTF Stocks</a>
+      <a href="#" class="nav-link" data-page="history">History</a>
+    </nav>
+    <div class="header-right">
+      <button class="data-badge" id="dataStatusBadge" title="Data status">
+        <span class="dot dot-green"></span>
+        <span class="badge-text">Data verified</span>
+      </button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+        <span class="material-symbols-outlined">settings</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== MAIN PAGES ===== -->
+<main class="app-main">
+
+<!-- =============== CALCULATOR PAGE =============== -->
+<section class="page page-active" id="page-calculator">
+  <div class="page-header">
+    <h1 class="page-title">MTF Calculator</h1>
+    <p class="page-subtitle">Compare MTF funding, interest, charges and net profit</p>
+  </div>
+
+  <div class="calc-layout">
+    <!-- LEFT: Inputs -->
+    <div class="calc-inputs-col">
+      <div class="card">
+        <!-- Stock Search -->
+        <div class="field-group">
+          <label class="field-label">Select Stock</label>
+          <div class="search-wrap">
+            <span class="material-symbols-outlined search-icon">search</span>
+            <input type="text" id="stockSearch" class="field-input search-input" placeholder="Search stock name, NSE symbol or ISIN" autocomplete="off"/>
+            <button class="search-clear hidden" id="searchClear" aria-label="Clear">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <ul class="search-dropdown hidden" id="searchDropdown" role="listbox"></ul>
+        </div>
+
+        <!-- Broker Status (shown after stock selection) -->
+        <div class="broker-status hidden" id="brokerStatus">
+          <div class="selected-stock" id="selectedStockInfo"></div>
+          <div class="broker-row">
+            <div class="broker-chip" id="zChip">
+              <div class="broker-chip-head"><span class="broker-initial">Z</span> Zerodha</div>
+              <div class="broker-chip-body">
+                <span class="chip-status"><span class="material-symbols-outlined tiny">check_circle</span> Available</span>
+                <span class="chip-metric">Margin <strong id="zMarginPct">–</strong></span>
+                <span class="chip-metric">Leverage <strong id="zLeverage">–</strong></span>
+              </div>
+            </div>
+            <div class="broker-chip" id="gChip">
+              <div class="broker-chip-head"><span class="broker-initial bg-blue">G</span> Groww</div>
+              <div class="broker-chip-body">
+                <span class="chip-status"><span class="material-symbols-outlined tiny">check_circle</span> Available</span>
+                <span class="chip-metric">Margin <strong id="gMarginPct">–</strong></span>
+                <span class="chip-metric">Leverage <strong id="gLeverage">–</strong></span>
+              </div>
+            </div>
+          </div>
+          <p class="data-ts" id="dataTsText"></p>
+        </div>
+
+        <hr class="divider"/>
+
+        <!-- Calculation Mode Toggle -->
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-mode="quantity" id="modeQty">Quantity Based</button>
+          <button class="toggle-btn" data-mode="capital" id="modeCap">Capital Based</button>
+        </div>
+
+        <!-- Input Fields -->
+        <div class="inputs-grid">
+          <div class="field-group">
+            <label class="field-label" for="buyPrice">Buy Price</label>
+            <div class="input-prefix-wrap">
+              <span class="prefix">₹</span>
+              <input type="number" id="buyPrice" class="field-input" placeholder="Enter buy price" min="0" step="0.05" value="0"/>
+            </div>
+          </div>
+          <div class="field-group" id="sellPriceGroup">
+            <label class="field-label" for="sellPrice">Sell Price</label>
+            <div class="input-prefix-wrap">
+              <span class="prefix">₹</span>
+              <input type="number" id="sellPrice" class="field-input" placeholder="Enter sell price" min="0" step="0.05" value="0"/>
+            </div>
+          </div>
+          <div class="field-group" id="quantityGroup">
+            <label class="field-label" for="quantity">Quantity</label>
+            <input type="number" id="quantity" class="field-input" placeholder="Enter quantity" min="0" step="1" value="0"/>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="ownCapital">
+              Own Capital
+              <span class="material-symbols-outlined info-icon" title="Amount of your own money you bring to this trade">info</span>
+            </label>
+            <div class="input-prefix-wrap">
+              <span class="prefix">₹</span>
+              <input type="number" id="ownCapital" class="field-input" placeholder="Enter own capital" min="0" step="1" value="0"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Holding Period -->
+        <div class="field-group">
+          <div class="holding-header">
+            <label class="field-label" for="holdingDays">Holding Period (days)</label>
+            <label class="date-toggle-label">
+              <span class="toggle-text">Use dates</span>
+              <input type="checkbox" id="useDatesToggle" class="sr-only"/>
+              <span class="mini-toggle"><span class="mini-toggle-knob"></span></span>
+            </label>
+          </div>
+          <div id="holdingDaysWrap">
+            <input type="number" id="holdingDays" class="field-input half-input" placeholder="Enter days" min="0" step="1" value="0"/>
+          </div>
+          <div id="holdingDatesWrap" class="hidden dates-row">
+            <div class="field-group">
+              <label class="field-label sm" for="buyDate">Buy Date</label>
+              <input type="date" id="buyDate" class="field-input"/>
+            </div>
+            <div class="field-group">
+              <label class="field-label sm" for="sellDate">Sell Date</label>
+              <input type="date" id="sellDate" class="field-input"/>
+            </div>
+            <p class="computed-days hidden" id="computedDays"></p>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <button class="btn-primary" id="calcBtn" disabled>
+          <span class="material-symbols-outlined btn-icon">calculate</span>
+          Calculate MTF
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results / Empty State -->
+    <div class="calc-results-col" id="resultsCol">
+      <!-- Empty State -->
+      <div class="card empty-state" id="emptyState">
+        <div class="empty-icon-wrap">
+          <span class="material-symbols-outlined empty-icon">calculate</span>
+        </div>
+        <h3 class="empty-title">Ready to calculate</h3>
+        <p class="empty-desc">Enter your trade details to compare Zerodha and Groww MTF costs.</p>
+        <div class="empty-flow">
+          <span class="flow-item"><span class="material-symbols-outlined tiny">show_chart</span> Stock</span>
+          <span class="material-symbols-outlined flow-arrow">arrow_downward</span>
+          <span class="flow-item"><span class="material-symbols-outlined tiny">account_balance_wallet</span> Margin</span>
+          <span class="material-symbols-outlined flow-arrow">arrow_downward</span>
+          <span class="flow-item"><span class="material-symbols-outlined tiny">percent</span> Interest + Charges</span>
+          <span class="material-symbols-outlined flow-arrow">arrow_downward</span>
+          <span class="flow-item highlight"><span class="material-symbols-outlined tiny">payments</span> Net Profit</span>
+        </div>
+      </div>
+
+      <!-- Results (hidden until calculation) -->
+      <div class="hidden" id="resultsArea">
+        <!-- Trade Summary -->
+        <div class="card result-trade-summary" id="tradeSummaryCard"></div>
+        <!-- Winner -->
+        <div class="card result-winner hidden" id="winnerCard"></div>
+        <!-- Broker Cards -->
+        <div class="broker-compare" id="brokerCompare"></div>
+        <!-- Funding Explanation -->
+        <div class="card collapsible" id="fundingCard">
+          <button class="collapse-header" data-target="fundingBody">
+            <span>How is funding calculated?</span>
+            <span class="material-symbols-outlined chevron">expand_more</span>
+          </button>
+          <div class="collapse-body hidden" id="fundingBody"></div>
+        </div>
+        <!-- Charges Breakdown -->
+        <div class="card collapsible" id="chargesCard">
+          <button class="collapse-header" data-target="chargesBody">
+            <span>Complete Charges Breakdown</span>
+            <span class="material-symbols-outlined chevron">expand_more</span>
+          </button>
+          <div class="collapse-body hidden" id="chargesBody"></div>
+        </div>
+        <!-- Interest Table -->
+        <div class="card collapsible" id="interestCard">
+          <button class="collapse-header" data-target="interestBody">
+            <span>MTF Interest by Holding Period</span>
+            <span class="material-symbols-outlined chevron">expand_more</span>
+          </button>
+          <div class="collapse-body hidden" id="interestBody"></div>
+        </div>
+        <!-- Day-wise P/L -->
+        <div class="card collapsible" id="dayPLCard">
+          <button class="collapse-header" data-target="dayPLBody">
+            <span>Profit by Holding Period</span>
+            <span class="material-symbols-outlined chevron">expand_more</span>
+          </button>
+          <div class="collapse-body hidden" id="dayPLBody"></div>
+        </div>
+        <!-- Visual P/L Chart -->
+        <div class="card collapsible" id="chartCard">
+          <button class="collapse-header open" data-target="chartBody">
+            <span>Net Profit vs Holding Days</span>
+            <span class="material-symbols-outlined chevron">expand_more</span>
+          </button>
+          <div class="collapse-body" id="chartBody">
+            <canvas id="plChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+        <!-- Break-Even -->
+        <div class="card" id="breakEvenCard"></div>
+        <!-- Target Profit -->
+        <div class="card" id="targetProfitCard">
+          <h3 class="card-title">Target Profit</h3>
+          <div class="field-group">
+            <label class="field-label" for="targetProfit">Target Net Profit</label>
+            <div class="input-prefix-wrap">
+              <span class="prefix">₹</span>
+              <input type="number" id="targetProfit" class="field-input" placeholder="Enter target" min="0" value="0"/>
+            </div>
+          </div>
+          <div id="targetResult"></div>
+        </div>
+        <!-- Actions -->
+        <div class="result-actions">
+          <button class="btn-outline" id="saveCalcBtn"><span class="material-symbols-outlined tiny">bookmark</span> Save</button>
+          <button class="btn-outline" id="shareCalcBtn"><span class="material-symbols-outlined tiny">share</span> Share</button>
+          <button class="btn-outline" id="newCalcBtn"><span class="material-symbols-outlined tiny">refresh</span> New Calculation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="disclaimer">Estimated values based on available broker data. Actual contract-note charges may differ. Verify current broker values before placing a trade.</p>
+</section>
+
+<!-- =============== STOCKS PAGE =============== -->
+<section class="page" id="page-stocks">
+  <div class="page-header">
+    <h1 class="page-title">MTF Stocks</h1>
+    <p class="page-subtitle">Browse stocks available for Margin Trading Facility</p>
+  </div>
+  <div class="stocks-toolbar">
+    <div class="search-wrap toolbar-search">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input type="text" id="stocksTableSearch" class="field-input search-input" placeholder="Search stocks..."/>
+    </div>
+    <div class="filter-pills" id="stockFilterPills">
+      <button class="pill active" data-filter="all">All</button>
+      <button class="pill" data-filter="zerodha">Zerodha</button>
+      <button class="pill" data-filter="groww">Groww</button>
+      <button class="pill" data-filter="both">Both</button>
+    </div>
+  </div>
+  <div class="card table-card">
+    <div class="table-wrap">
+      <table class="data-table" id="stocksTable">
+        <thead>
+          <tr>
+            <th class="sortable" data-sort="company">Company</th>
+            <th class="sortable" data-sort="symbol">Symbol</th>
+            <th class="sortable text-right" data-sort="zMargin">Zerodha Margin</th>
+            <th class="sortable text-right" data-sort="gMargin">Groww Margin</th>
+            <th class="text-right">Best Leverage</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody id="stocksTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- Stock Detail Modal -->
+  <div class="modal-overlay hidden" id="stockDetailModal">
+    <div class="modal-content" id="stockDetailContent"></div>
+  </div>
+</section>
+
+<!-- =============== HISTORY PAGE =============== -->
+<section class="page" id="page-history">
+  <div class="page-header">
+    <h1 class="page-title">Saved Calculations</h1>
+    <p class="page-subtitle">Review your previously saved margin trade scenarios.</p>
+  </div>
+  <div class="history-grid" id="historyGrid">
+    <!-- Populated by JS -->
+  </div>
+</section>
+
+<!-- =============== SETTINGS MODAL =============== -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal-content settings-modal">
+    <div class="modal-header">
+      <h2>Settings</h2>
+      <button class="icon-btn modal-close" data-close="settingsModal"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal-body">
+      <h3 class="settings-section-title">Advanced Overrides</h3>
+      <p class="settings-desc">Override broker defaults for custom scenarios. Set to 0 to use actual values.</p>
+      <div class="inputs-grid">
+        <div class="field-group"><label class="field-label">Zerodha Interest Rate Override (%)</label><input type="number" id="ovZInterest" class="field-input" value="0" min="0" step="0.1"/></div>
+        <div class="field-group"><label class="field-label">Groww Interest Rate Override (%)</label><input type="number" id="ovGInterest" class="field-input" value="0" min="0" step="0.1"/></div>
+        <div class="field-group"><label class="field-label">Zerodha Brokerage Override (₹)</label><input type="number" id="ovZBrokerage" class="field-input" value="0" min="0"/></div>
+        <div class="field-group"><label class="field-label">Groww Brokerage Override (₹)</label><input type="number" id="ovGBrokerage" class="field-input" value="0" min="0"/></div>
+      </div>
+      <button class="btn-primary mt-lg" id="saveSettingsBtn">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ===== MOBILE BOTTOM NAV ===== -->
+<nav class="bottom-nav" id="bottomNav">
+  <a href="#" class="bnav-item active" data-page="calculator">
+    <span class="material-symbols-outlined">calculate</span>
+    <span class="bnav-label">Calc</span>
+  </a>
+  <a href="#" class="bnav-item" data-page="stocks">
+    <span class="material-symbols-outlined">trending_up</span>
+    <span class="bnav-label">Stocks</span>
+  </a>
+  <a href="#" class="bnav-item" data-page="history">
+    <span class="material-symbols-outlined">history</span>
+    <span class="bnav-label">History</span>
+  </a>
+</nav>
+
+<footer class="app-footer">
+  <p>© 2026 MTF Calculator. Values are estimated. Verify with your broker before trading.</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="calc.js"></script>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js');
+    });
+  }
+</script>
+</body>
+</html>
