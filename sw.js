@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mtf-calc-v3';
+const CACHE_NAME = 'mtf-calc-v4';
 const urlsToCache = [
   './',
   './index.html',
