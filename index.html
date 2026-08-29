@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="style.css"/>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#1a1a2e">
 <link rel="apple-touch-icon" href="assets/logo.png">
 </head>
 <body>
@@ -31,6 +31,9 @@
     <div class="header-right">
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light/dark mode">
         <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+      </button>
+      <button class="icon-btn hidden" id="installBtn" aria-label="Install App" title="Install App">
+        <span class="material-symbols-outlined">install_mobile</span>
       </button>
       <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
         <span class="material-symbols-outlined">settings</span>
@@ -548,11 +551,121 @@
 <script src="data.js"></script>
 <script src="calc.js"></script>
 <script src="app.js"></script>
+<!-- PWA Install Banner -->
+<div class="pwa-install-banner hidden" id="pwaInstallBanner">
+  <div class="pwa-banner-content">
+    <img src="assets/icon-192.png" alt="MTF Calculator" class="pwa-banner-icon"/>
+    <div class="pwa-banner-text">
+      <strong>Install MTF Calculator</strong>
+      <span>Add to home screen for quick access & offline use</span>
+    </div>
+  </div>
+  <div class="pwa-banner-actions">
+    <button class="pwa-banner-dismiss" id="pwaDismissBtn">Not Now</button>
+    <button class="pwa-banner-install" id="pwaInstallBannerBtn">Install</button>
+  </div>
+</div>
+
 <script>
+  // ====== Service Worker Registration ======
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(()=>{});
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => {
+          console.log('SW registered, scope:', reg.scope);
+          // Check for updates periodically
+          setInterval(() => reg.update(), 60 * 60 * 1000);
+        })
+        .catch(err => console.warn('SW registration failed:', err));
     });
+  }
+
+  // ====== PWA Install Prompt Handling ======
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('installBtn');
+  const pwaInstallBanner = document.getElementById('pwaInstallBanner');
+  const pwaInstallBannerBtn = document.getElementById('pwaInstallBannerBtn');
+  const pwaDismissBtn = document.getElementById('pwaDismissBtn');
+
+  // Check if already installed
+  function isAppInstalled() {
+    return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+  }
+
+  // Listen for the browser's install prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('beforeinstallprompt fired');
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Show install button in header
+    if (installBtn) installBtn.classList.remove('hidden');
+
+    // Show install banner if not previously dismissed in this session
+    const dismissed = sessionStorage.getItem('pwa-install-dismissed');
+    if (!dismissed && pwaInstallBanner) {
+      setTimeout(() => {
+        pwaInstallBanner.classList.remove('hidden');
+        pwaInstallBanner.classList.add('pwa-banner-show');
+      }, 3000); // Show after 3 seconds
+    }
+  });
+
+  // Handle install button click (header icon)
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('Install prompt outcome:', outcome);
+      deferredPrompt = null;
+      installBtn.classList.add('hidden');
+      if (pwaInstallBanner) {
+        pwaInstallBanner.classList.add('hidden');
+        pwaInstallBanner.classList.remove('pwa-banner-show');
+      }
+    });
+  }
+
+  // Handle banner install button
+  if (pwaInstallBannerBtn) {
+    pwaInstallBannerBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('Banner install outcome:', outcome);
+      deferredPrompt = null;
+      if (installBtn) installBtn.classList.add('hidden');
+      pwaInstallBanner.classList.add('hidden');
+      pwaInstallBanner.classList.remove('pwa-banner-show');
+    });
+  }
+
+  // Handle banner dismiss
+  if (pwaDismissBtn) {
+    pwaDismissBtn.addEventListener('click', () => {
+      pwaInstallBanner.classList.add('hidden');
+      pwaInstallBanner.classList.remove('pwa-banner-show');
+      sessionStorage.setItem('pwa-install-dismissed', '1');
+    });
+  }
+
+  // Listen for successful installation
+  window.addEventListener('appinstalled', () => {
+    console.log('App installed successfully');
+    deferredPrompt = null;
+    if (installBtn) installBtn.classList.add('hidden');
+    if (pwaInstallBanner) {
+      pwaInstallBanner.classList.add('hidden');
+      pwaInstallBanner.classList.remove('pwa-banner-show');
+    }
+  });
+
+  // Hide install UI if already installed
+  if (isAppInstalled()) {
+    if (installBtn) installBtn.classList.add('hidden');
+    if (pwaInstallBanner) pwaInstallBanner.classList.add('hidden');
   }
 </script>
 </body>
