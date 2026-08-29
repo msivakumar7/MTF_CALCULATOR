@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mtf-calc-v5';
+const CACHE_NAME = 'mtf-calc-v6';
 const urlsToCache = [
   './',
   './index.html',
@@ -7,12 +7,7 @@ const urlsToCache = [
   './calc.js',
   './data.js',
   './manifest.json',
-  './assets/logo.png',
-  './assets/icon-192.png',
-  './assets/icon-512.png',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
-  'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap',
-  'https://cdn.jsdelivr.net/npm/chart.js'
+  './assets/logo.png'
 ];
 
 self.addEventListener('install', event => {
