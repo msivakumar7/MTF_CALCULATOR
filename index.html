@@ -287,6 +287,26 @@
       <div class="collapse-body hidden" id="interestBody"></div>
     </div>
 
+    <!-- CALCULATION ASSUMPTIONS -->
+    <h3 class="section-divider mt-lg">CALCULATION ASSUMPTIONS</h3>
+    <div class="card collapsible" id="assumptionsCard">
+      <button class="collapse-header" data-target="assumptionsBody">
+        <span>View Calculation Assumptions</span>
+        <span class="material-symbols-outlined chevron">expand_more</span>
+      </button>
+      <div class="collapse-body hidden" id="assumptionsBody"></div>
+    </div>
+
+    <!-- DEBUG AUDIT MODE -->
+    <h3 class="section-divider mt-lg">DEBUG / AUDIT MODE</h3>
+    <div class="card collapsible" id="debugCard">
+      <button class="collapse-header" data-target="debugBody">
+        <span>View Full Calculation Chain</span>
+        <span class="material-symbols-outlined chevron">expand_more</span>
+      </button>
+      <div class="collapse-body hidden" id="debugBody"></div>
+    </div>
+
     <!-- PROFIT BY HOLDING PERIOD -->
     <h3 class="section-divider mt-lg">PROFIT BY HOLDING PERIOD</h3>
     <div class="card collapsible" id="dayPLCard">
@@ -318,8 +338,12 @@
     </div>
 
     <div class="result-actions mt-lg">
-      <button class="btn-outline" id="saveCalcBtn"><span class="material-symbols-outlined tiny">bookmark</span> Save Calculation</button>
-      <button class="btn-outline" id="shareCalcBtn"><span class="material-symbols-outlined tiny">share</span> Share</button>
+      <button class="btn btn-block" id="saveCalcBtn"><span class="material-symbols-outlined">bookmark_add</span> Save to History</button>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer mt-lg" style="font-size: 11px; color: var(--text2); text-align: center; padding: 10px;">
+      Charges are estimates based on configured broker pricing and applicable statutory rates. Actual charges may differ slightly due to order execution, rounding, exchange rules, tax treatment, pledge events, and broker contract-note calculations.
     </div>
   </div>
 </section>
