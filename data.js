@@ -28,28 +28,104 @@ const MTF_STOCKS = [
   { company:"Tata Steel", symbol:"TATASTEEL", isin:"INE081A01020", exchange:"NSE", zMargin:30.00, gMargin:30.00, updated:"2026-08-27T10:20:00" },
 ];
 
-// Broker configuration
-const BROKER_CONFIG = {
+// ====================================================================
+// BROKER PRICING CONFIGURATION — Single source of truth
+// All rates verified from official broker pricing pages.
+// DO NOT scatter numbers elsewhere in the codebase.
+// ====================================================================
+
+var BROKER_CONFIG = {
+  // ----- Versioning & Metadata -----
+  pricingVersion: "2.0.0",
+  lastUpdated: "2026-08-31",
+  lastVerifiedDate: "2026-08-31",
+
+  // ----- Common Statutory Rates -----
+  // STT: Securities Transaction Tax (delivery/MTF = 0.1% both sides)
+  sttBuyRate: 0.001,         // 0.1% on buy value
+  sttSellRate: 0.001,        // 0.1% on sell value
+
+  // Stamp Duty: 0.015% on buy side only
+  stampDutyBuyRate: 0.00015,
+
+  // GST: 18% on brokerage + exchange txn + SEBI charges (NOT on STT, stamp duty)
+  gstRate: 0.18,
+
+  // ----- Zerodha -----
   zerodha: {
     name: "Zerodha",
-    interestRate: 18, // annual %
-    brokerage: 20,    // flat per order
-    dpCharges: 15.93,
-    pledgeCharge: 0,
-    unpledgeCharge: 0,
+    sourceUrl: "https://zerodha.com/charges",
+
+    // MTF Interest: 0.04% per day on funded amount (charged from T+1)
+    mtfInterestDaily: 0.0004,       // 0.04% per day as a decimal fraction
+    mtfInterestAnnual: null,        // Zerodha quotes daily rate, not annual
+    interestStartsT1: true,         // Interest begins from T+1
+
+    // Brokerage: 0.3% or ₹20 per executed MTF order, whichever is LOWER
+    brokeragePercent: 0.003,        // 0.3%
+    brokerageCapPerOrder: 20,       // ₹20 cap per order
+    brokerageMinPerOrder: 0,        // No minimum
+
+    // Exchange Transaction Charges (NSE equity delivery)
+    exchangeChargeRate_NSE: 0.0000307,  // 0.00307%
+    exchangeChargeRate_BSE: 0.0000,     // BSE placeholder
+
+    // SEBI Turnover Charge: ₹10 per crore
+    sebiChargeRate: 10 / 10000000,      // ₹10 per crore = 0.000001
+
+    // IPFT: Not charged separately by Zerodha
+    ipftChargeRate: 0,
+
+    // DP Charges: Not applicable for MTF (pledge/unpledge covers this)
+    dpCharge: 0,
+
+    // Pledge: ₹15 + GST per ISIN per pledge request
+    pledgeFeePerISIN: 15,
+
+    // Unpledge: ₹15 + GST per ISIN per unpledge request
+    unpledgeFeePerISIN: 15,
+
+    // Square-off: ₹50 + GST per order (only if broker forces square-off)
+    squareOffFeePerOrder: 50,
   },
+
+  // ----- Groww -----
   groww: {
     name: "Groww",
-    interestRate: 14, // annual %
-    brokerage: 20,
-    dpCharges: 15.93,
-    pledgeCharge: 0,
-    unpledgeCharge: 0,
-  },
-  // Common regulatory charges (rates)
-  sttRate: 0.001,          // 0.1% on sell side delivery
-  exchangeChargeRate: 0.0000345, // NSE
-  sebiRate: 0.000001,      // per crore
-  gstRate: 0.18,           // 18%
-  stampDutyBuyRate: 0.00015, // 0.015% on buy
+    sourceUrl: "https://groww.in/charges",
+
+    // MTF Interest: 14.95% per annum on funded amount
+    mtfInterestAnnual: 0.1495,                // 14.95% p.a.
+    mtfInterestDaily: 0.1495 / 365,            // ~0.0409589% per day
+    interestStartsT1: true,
+
+    // Brokerage: 0.1% per executed MTF order
+    brokeragePercent: 0.001,        // 0.1%
+    brokerageCapPerOrder: null,     // No cap
+    brokerageMinPerOrder: 0,
+
+    // Exchange Transaction Charges (NSE equity delivery)
+    exchangeChargeRate_NSE: 0.0000297,  // 0.00297%
+    exchangeChargeRate_BSE: 0.0000,
+
+    // SEBI Turnover Charge: ₹10 per crore (0.0001%)
+    sebiChargeRate: 10 / 10000000,
+
+    // IPFT: 0.0001% (₹10 per crore)
+    ipftChargeRate: 10 / 10000000,
+
+    // DP Charges (for sell debit)
+    // Groww: ₹13.50 depository + ₹5.50 Groww = ₹19 (standard per sell scrip)
+    // For debit values < ₹100: ₹0
+    dpDepositoryCharge: 13.50,
+    dpBrokerCharge: 5.50,
+    dpMinDebitThreshold: 100,     // No DP charge if sell value < ₹100
+
+    // Pledge: ₹20 per ISIN per pledge/unpledge order
+    pledgeFeePerISIN: 20,
+    unpledgeFeePerISIN: 20,
+
+    // Square-off: Not separately listed, use 0
+    squareOffFeePerOrder: 0,
+  }
 };
